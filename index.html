@@ -1,49 +1,167 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Переход в браузер</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Відкриття сайту</title>
     <style>
-        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f4f9; text-align: center; }
-        .card { padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 300px; }
-        .btn { display: inline-block; padding: 12px 24px; background: #0088cc; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
-        .hint { font-size: 0.9em; color: #666; margin-top: 15px; }
+        /* Основні стилі сторінки */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            background: #f0f2f5; 
+            text-align: center; 
+            color: #1c1e21;
+            overflow: hidden; /* Заборона скролу при оверлеї */
+        }
+        .card { 
+            padding: 30px; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+            max-width: 320px; 
+            width: 90%;
+            position: relative;
+            z-index: 1;
+        }
+        h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.4em; }
+        p { font-size: 1em; color: #4b4b4b; line-height: 1.4; margin-bottom: 0; }
+        
+        /* Стилі кнопки */
+        .btn { 
+            display: block; 
+            padding: 15px 20px; 
+            background: #0088cc; 
+            color: white !important; 
+            text-decoration: none; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            margin-top: 25px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        .btn:active { background: #006699; }
+
+        /* Стилі для оверлею (стрілка та підказка для iOS) */
+        #ios-overlay {
+            display: none; /* Приховано за замовчуванням */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            z-index: 100;
+            pointer-events: auto; /* Дозволяємо кліки, щоб закрити */
+        }
+
+        /* Велика стрілка вгору-вправо */
+        .arrow {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 60px;
+            line-height: 1;
+            animation: bounce 1s infinite;
+        }
+
+        /* Текст інструкції на оверлеї */
+        .instruction {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            line-height: 1.5;
+            text-align: right;
+            font-weight: 500;
+        }
+        .instruction b { color: #55ceff; }
+
+        /* Анімація стрілки */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-10px) translateX(5px); }
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h3>Почти готово!</h3>
-    <p>Для стабильной работы откройте сайт в основном браузере</p>
+<div class="card" id="main-card">
+    <h3>Відкриваємо сайт...</h3>
+    <p id="status-text">На Android сайт має відкритися автоматично.</p>
     
-    <a href="https://cloud.uislab.com/ords/f?p=2900:LOGIN_DESKTOP::::::" id="open-link" class="btn">ОТКРЫТЬ САЙТ</a>
+    <button id="open-link" class="btn">ПЕРЕЙТИ ДО САЙТУ</button>
+</div>
 
-    <div class="hint">
-        Если сайт не открылся:<br>
-        <b>Нажмите ⋮ или ⋯</b><br>
-        и выберите <b>"Открыть в браузере"</b>
+<div id="ios-overlay" onclick="hideOverlay()">
+    <div class="arrow">↗</div>
+    <div class="instruction">
+        Натисніть сюди <b>(⋯)</b><br>
+        та оберіть<br>
+        <b>«Відкрити у браузері»</b>
     </div>
 </div>
 
 <script>
-    const targetUrl = "cloud.uislab.com/ords/f?p=2900:LOGIN_DESKTOP::::::"; // Вставь сюда адрес нужного сайта (без https://)
+    // === КОНФІГУРАЦІЯ ===
+    // ЗАМІНИ ЦЕ НА СВІЙ САЙТ (без https://)
+    const targetUrl = "https://cloud.uislab.com/ords/f?p=2900:LOGIN_DESKTOP::::::"; 
+    // ===================
 
-    function tryRedirect() {
-        const isAndroid = /Android/i.test(navigator.userAgent);
-        
-        if (isAndroid) {
-            // Пытаемся принудительно вызвать Chrome на Android
-            const intentUrl = `intent://${targetUrl}#Intent;scheme=https;package=com.android.chrome;end`;
-            window.location.href = intentUrl;
-        } else {
-            // На iOS просто меняем ссылку на кнопке на обычную
-            document.getElementById('open-link').href = "https://" + targetUrl;
-        }
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    const openBtn = document.getElementById('open-link');
+    const statusText = document.getElementById('status-text');
+    const iosOverlay = document.getElementById('ios-overlay');
+
+    // Функція приховування оверлею при кліку на нього
+    function hideOverlay() {
+        iosOverlay.style.display = 'none';
     }
 
-    // Запускаем попытку сразу при загрузке
-    window.onload = tryRedirect;
+    // Основна логіка при завантаженні
+    window.onload = function() {
+        if (isAndroid) {
+            statusText.innerText = "Спробуємо відкрити сайт автоматично...";
+            // Спроба Android Intent
+            const intentUrl = `intent://${targetUrl}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
+            
+            // На кнопці теж залишаємо intent на випадок збою автомата
+            openBtn.onclick = function() {
+                window.location.href = intentUrl;
+            };
+
+            // Авто-редирект через півсекунди
+            setTimeout(() => {
+                window.location.href = intentUrl;
+            }, 500);
+
+        } else if (isIOS) {
+            statusText.innerText = "Telegram обмежує роботу сайтів.";
+            // На iOS кнопка НЕ відкриває сайт, а показує інструкцію
+            openBtn.innerText = "ЯК ВІДКРИТИ";
+            openBtn.onclick = function(e) {
+                e.preventDefault(); // Забороняємо перехід
+                iosOverlay.style.display = 'block'; // Показуємо стрілку
+            };
+        } else {
+            // Для ПК або інших систем — звичайна кнопка-посилання
+            statusText.innerText = "Натисніть кнопку нижче.";
+            openBtn.onclick = function() {
+                window.location.href = "https://" + targetUrl;
+            };
+        }
+    };
 </script>
 
 </body>
