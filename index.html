@@ -130,12 +130,27 @@
             setTimeout(tryOpen, 500);
 
         } else if (isIOS) {
-            statusText.innerText = "Telegram обмежує роботу сайтів.";
-            openBtn.innerText = "ЯК ВІДКРИТИ";
-            openBtn.onclick = function(e) {
-                e.preventDefault();
-                iosOverlay.style.display = 'block';
-            };
+            // Перевірка: чи ми всередині WebView Telegram
+            const isTelegram = /Telegram/i.test(navigator.userAgent);
+
+            if (isTelegram) {
+                // Якщо в WebView - показуємо інструкцію зі стрілкою
+                statusText.innerText = "Telegram обмежує роботу сайтів.";
+                openBtn.innerText = "ЯК ВІДКРИТИ";
+                openBtn.onclick = function(e) {
+                    e.preventDefault();
+                    iosOverlay.style.display = 'block';
+                };
+            } else {
+                // Якщо користувач вже в Safari (вбудований браузер вимкнено)
+                statusText.innerText = "Ви вже у безпечному браузері.";
+                openBtn.innerText = "ПЕРЕЙТИ ДО САЙТУ";
+                openBtn.onclick = function() {
+                    window.location.href = fullTargetUrl;
+                };
+                // Можна навіть зробити авто-перехід через 1 секунду
+                setTimeout(() => { window.location.href = fullTargetUrl; }, 1000);
+            }
         } else {
             statusText.innerText = "Натисніть кнопку нижче.";
             openBtn.onclick = function() {
